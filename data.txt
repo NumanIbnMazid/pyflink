@@ -1,0 +1,7 @@
+2022-01-11T00:53:31,425521,collateral+damage+2002,1.0
+2022-01-09T11:09:21,965626,close+encounters+of+the+third+kind+1977,0.6
+2022-01-11T01:09:04,326309,dazed+and+confused+1993,0.6
+2022-01-11T01:16:30,204487,to+kill+a+mockingbird+1962,1.0
+2022-01-11T01:18:35,496389,the+postman+1994,1.0
+2022-01-09T11:56:12,915117,the+truth+about+cats++dogs+1996,0.6
+2022-01-09T12:20:15,263081,the+shawshank+redemption+1994,0.6
