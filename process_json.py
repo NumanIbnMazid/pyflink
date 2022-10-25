@@ -66,8 +66,8 @@ def process_json_data():
 
     # define operations
     ds = ds.map(add_count).name("add_1_to_count")
-    verified_ds = ds.map(verify).name("verify_data")
-    modified_ds = ds.map(modify).name("modify_data")
+    verified_ds = ds.map(verify).name("add_verify")
+    modified_ds = ds.map(modify).name("add_modify")
     final_ds = verified_ds.connect(modified_ds).map(
         JoinResultFunction(), output_type=Types.TUPLE([Types.INT(), Types.STRING()])).name("join_data")
 

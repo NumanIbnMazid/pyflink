@@ -24,5 +24,5 @@ def verify(data):
 
 
 def modify(data):
-    data[1].update(published=True)
+    data[1].update(modified=True)
     return data
