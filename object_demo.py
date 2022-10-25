@@ -13,10 +13,8 @@ from pyflink.datastream.functions import RuntimeContext, MapFunction
 class Detector:
     def __init__(self):
         print("Initializing detector...")
-        logging.info("Initializing detector...")
         sleep(3)
         print("Detector initialization complete!")
-        logging.info("Detector initialization complete!")
 
     def process(self, value):
         print("Processing value: ", value)
@@ -26,14 +24,13 @@ class Detector:
 class MyMapFunction(MapFunction):
 
     def open(self, runtime_context: RuntimeContext):
-        print("Initializing resource...")
-        logging.info("Initializing resource...")
+        print("Initializing resources...")
         self.detector = Detector()
         print("Initialization complete!")
-        logging.info("Initialization complete!")
 
     def map(self, value):
         return self.detector.process(value)
+
 
 def object_demo():
     # 1. create a StreamExecutionEnvironment
