@@ -31,7 +31,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
   jobmanager:
-    image: pyflink:1.14.4
+    image: pyflink-ocr:1.14.4
     ports:
       - "8081:8081"
     command: jobmanager
@@ -39,9 +39,11 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager        
+    volumes:
+      - ./:/project
 
   taskmanager:
-    image: pyflink:1.14.4
+    image: pyflink-ocr:1.14.4
     depends_on:
       - jobmanager
     command: taskmanager
