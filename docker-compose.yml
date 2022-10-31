@@ -39,6 +39,7 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager        
+      - OMP_THREAD_LIMIT=1
     volumes:
       - ./:/project
 
@@ -53,3 +54,4 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 2
+      - OMP_THREAD_LIMIT=1
