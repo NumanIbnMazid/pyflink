@@ -4,11 +4,13 @@ from time import strptime
 from typing import Optional, Tuple, Any, List
 from base64 import b64decode
 import logging
+import json
 
 import cv2
 import numpy as np
 import pytesseract
 from pytesseract import Output
+from pyflink.common import Row
 from pyflink.datastream import FlatMapFunction
 
 import image_operations
@@ -37,7 +39,7 @@ class Fifa2020Function(FlatMapFunction):
         result = self.process_message()
         logging.info("Processing ended")
         if result:
-            yield result[0].to_dict()
+            yield Row(json.dumps(result[0].to_dict()))
 
     def process_message(self):
         return self.run_detection()
