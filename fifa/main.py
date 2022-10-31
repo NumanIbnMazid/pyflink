@@ -51,8 +51,8 @@ def main():
     
     # perform transformation
     print("Setting up operations")
-    ds = ds.key_by(lambda x: x["id"]).flat_map(FrameGeneratorFunction()).name("frame_generator") \
-           .flat_map(Fifa2020Function()).name("fifa_detector")
+    ds = ds.flat_map(FrameGeneratorFunction()).name("frame_generator") \
+           .flat_map(Fifa2020Function()).name("fifa_detector").start_new_chain().set_parallelism(2)
     
     # produce data to kafka sink topic
     #print("Setting up Kafka sink")

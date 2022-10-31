@@ -39,8 +39,7 @@ class FrameGeneratorFunction(FlatMapFunction):
 
                     result = encode_image(frame)
                     #hash_value = random.getrandbits(64)
-
-                    yield result
+                    yield (value["id"], result)
                     logging.info(f"FileVideoStream: Write frame (Index: {frame_index}) finished")
                     print(f"FileVideoStream: Write frame (Index: {frame_index}) finished")
                 else:

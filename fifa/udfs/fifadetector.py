@@ -29,7 +29,7 @@ class Fifa2020Function(FlatMapFunction):
 
     def flat_map(self, value):
         logging.info("Received encoded frame")
-        content = value
+        content = value[1]
 
         self.image = decode_image(content)
 
