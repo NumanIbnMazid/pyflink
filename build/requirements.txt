@@ -1,4 +1,4 @@
-apache-flink==1.14.4
+apache-flink==1.16.0
 opencv-contrib-python-headless==4.5.5.64
 pytesseract==0.3.8
 mashumaro==2.11

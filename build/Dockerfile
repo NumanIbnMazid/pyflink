@@ -1,4 +1,4 @@
-FROM flink:1.14.4
+FROM flink:1.16.0
 
 
 # install python3: it has updated Python to 3.9 in Debian 11 and so install Python 3.7 from source
@@ -19,4 +19,4 @@ apt-get clean && \
 rm -rf /var/lib/apt/lists/*
 
 # install PyFlink
-RUN pip3 install apache-flink==1.14.4
+RUN pip3 install apache-flink==1.16.0
