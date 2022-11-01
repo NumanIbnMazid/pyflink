@@ -2,13 +2,12 @@ import sys
 import os
 import logging
 
-from pyflink.common.serialization import JsonRowDeserializationSchema, JsonRowSerializationSchema, SimpleStringSchema
+from pyflink.common import SimpleStringSchema
 from pyflink.common.typeinfo import Types
 from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.datastream.connectors import FlinkKafkaConsumer, FlinkKafkaProducer
+from pyflink.datastream.connectors.kafka import FlinkKafkaConsumer, FlinkKafkaProducer
 
-from framegenerator import FrameGeneratorFunction
-from fifadetector import Fifa2020Function
+from udfs import FrameGeneratorFunction, Fifa2020Function
 
 
 def main():
@@ -19,15 +18,15 @@ def main():
 
     # add dependencies
     print("Adding dependencies")
-    python_dep = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'udfs')
-    env.add_python_file(file_path=python_dep)
+    #python_dep = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'udfs')
+    #env.add_python_file(file_path=python_dep)
     data_dep = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'videos.zip')
     env.add_python_archive(archive_path=data_dep, target_dir="videos")
     
     # add kafka connector dependency
     print("Adding Kafka connector dependency")
     kafka_jar = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             'flink-sql-connector-kafka_2.11-1.14.4.jar')
+                             'flink-sql-connector-kafka-1.16.0.jar')
     env.add_jars("file://{}".format(kafka_jar))
     
     # consume data from kafka source topic

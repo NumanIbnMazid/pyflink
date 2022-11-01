@@ -12,8 +12,8 @@ import pytesseract
 from pytesseract import Output
 from pyflink.datastream import FlatMapFunction
 
-import image_operations
-from dto import FIFA2020DTO
+from udfs import image_operations
+from udfs.dto import FIFA2020DTO
 
 
 def decode_image(content):
