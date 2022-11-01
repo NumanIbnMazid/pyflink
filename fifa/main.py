@@ -1,10 +1,8 @@
 import sys
 import os
 import logging
-import json
 
-from pyflink.common import Row
-from pyflink.common.serialization import JsonRowDeserializationSchema, JsonRowSerializationSchema
+from pyflink.common.serialization import JsonRowDeserializationSchema, JsonRowSerializationSchema, SimpleStringSchema
 from pyflink.common.typeinfo import Types
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.datastream.connectors import FlinkKafkaConsumer, FlinkKafkaProducer
@@ -34,12 +32,12 @@ def main():
     
     # consume data from kafka source topic
     print("Setting up Kafka source")
-    deserialization_schema = JsonRowDeserializationSchema.builder() \
-        .type_info(type_info=Types.ROW_NAMED(["id", "filename"], [Types.INT(), Types.STRING()])).build()
+    #deserialization_schema = JsonRowDeserializationSchema.builder() \
+    #    .type_info(type_info=Types.ROW_NAMED(["id", "filename"], [Types.INT(), Types.STRING()])).build()
 
     kafka_consumer = FlinkKafkaConsumer(
         topics='test-source-topic',
-        deserialization_schema=deserialization_schema,
+        deserialization_schema=SimpleStringSchema(),
         properties={'bootstrap.servers': 'broker:29092', 'group.id': 'test_group'})
 
     ds = env.add_source(kafka_consumer).name("kafka_test-source-topic")
@@ -52,17 +50,17 @@ def main():
     # perform transformation
     print("Setting up operations")
     ds = ds.flat_map(FrameGeneratorFunction()).name("frame_generator") \
-           .flat_map(Fifa2020Function(), output_type=Types.ROW([Types.STRING()])).name("fifa_detector") \
+           .flat_map(Fifa2020Function(), output_type=Types.STRING()).name("fifa_detector") \
            .start_new_chain().set_parallelism(2)
     
     # produce data to kafka sink topic
     print("Setting up Kafka sink")
-    serialization_schema = JsonRowSerializationSchema.builder().with_type_info(
-        type_info=Types.ROW_NAMED(["results"], [Types.STRING()])).build()
+    #serialization_schema = JsonRowSerializationSchema.builder().with_type_info(
+    #    type_info=Types.ROW_NAMED(["results"], [Types.STRING()])).build()
 
     kafka_producer = FlinkKafkaProducer(
         topic='test-sink-topic',
-        serialization_schema=serialization_schema,
+        serialization_schema=SimpleStringSchema(),
         producer_config={'bootstrap.servers': 'broker:29092', 'group.id': 'test_group'})
 
     ds.add_sink(kafka_producer).name("kafka_test-sink-topic")

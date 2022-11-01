@@ -1,6 +1,7 @@
 import logging
 import random
 from base64 import b64encode
+import json
 
 from pyflink.datastream import FlatMapFunction
 
@@ -17,6 +18,7 @@ class FrameGeneratorFunction(FlatMapFunction):
         pass
 
     def flat_map(self, value):
+        value = json.loads(value)
         logging.info(f"Getting video from: {value['filename']}")
         print(f"Getting video from: {value['filename']}")
         path = f"videos/videos/{value['filename']}"
