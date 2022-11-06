@@ -2,10 +2,14 @@ import sys
 import os
 import logging
 
-from pyflink.common import SimpleStringSchema
+from pyflink.common import SimpleStringSchema, WatermarkStrategy
 from pyflink.common.typeinfo import Types
 from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.datastream.connectors.kafka import FlinkKafkaConsumer, FlinkKafkaProducer
+from pyflink.datastream.connectors.base import DeliveryGuarantee
+from pyflink.datastream.connectors.kafka import (
+    FlinkKafkaConsumer, FlinkKafkaProducer,
+    KafkaSource, KafkaSink, KafkaOffsetsInitializer, KafkaRecordSerializationSchema
+)
 
 from udfs import FrameGeneratorFunction, Fifa2020Function
 
@@ -34,12 +38,22 @@ def main():
     #deserialization_schema = JsonRowDeserializationSchema.builder() \
     #    .type_info(type_info=Types.ROW_NAMED(["id", "filename"], [Types.INT(), Types.STRING()])).build()
 
-    kafka_consumer = FlinkKafkaConsumer(
-        topics='test-source-topic',
-        deserialization_schema=SimpleStringSchema(),
-        properties={'bootstrap.servers': 'broker:29092', 'group.id': 'test_group'})
+    #kafka_consumer = FlinkKafkaConsumer(
+    #    topics='test-source-topic',
+    #    deserialization_schema=SimpleStringSchema(),
+    #    properties={'bootstrap.servers': 'broker:29092', 'group.id': 'test_group'})
 
-    ds = env.add_source(kafka_consumer).name("kafka_test-source-topic")
+    #ds = env.add_source(kafka_consumer).name("kafka_test-source-topic")
+
+    kafka_consumer = KafkaSource.builder() \
+        .set_bootstrap_servers("broker:29092") \
+        .set_topics("test-source-topic") \
+        .set_group_id("test_group") \
+        .set_starting_offsets(KafkaOffsetsInitializer.latest()) \
+        .set_value_only_deserializer(SimpleStringSchema()) \
+        .build()
+
+    ds = env.from_source(kafka_consumer, WatermarkStrategy.no_watermarks(), "kafka_test-source-topic")
 
     #ds = env.from_collection([
     #    {"id": 1, "filename": "index_720p30_00001.ts"},
@@ -57,12 +71,25 @@ def main():
     #serialization_schema = JsonRowSerializationSchema.builder().with_type_info(
     #    type_info=Types.ROW_NAMED(["results"], [Types.STRING()])).build()
 
-    kafka_producer = FlinkKafkaProducer(
-        topic='test-sink-topic',
-        serialization_schema=SimpleStringSchema(),
-        producer_config={'bootstrap.servers': 'broker:29092', 'group.id': 'test_group'})
+    #kafka_producer = FlinkKafkaProducer(
+    #    topic='test-sink-topic',
+    #    serialization_schema=SimpleStringSchema(),
+    #    producer_config={'bootstrap.servers': 'broker:29092', 'group.id': 'test_group'})
 
-    ds.add_sink(kafka_producer).name("kafka_test-sink-topic")
+    #ds.add_sink(kafka_producer).name("kafka_test-sink-topic")
+
+    kafka_producer = KafkaSink.builder() \
+        .set_bootstrap_servers("broker:29092") \
+        .set_record_serializer(
+            KafkaRecordSerializationSchema.builder()
+                .set_topic("test-sink-topic")
+                .set_value_serialization_schema(SimpleStringSchema())
+                .build()
+        ) \
+        .set_delivery_guarantee(DeliveryGuarantee.AT_LEAST_ONCE) \
+        .build()
+
+    ds.sink_to(kafka_producer).name("kafka_test-sink-topic")
 
     #ds.print()
 
