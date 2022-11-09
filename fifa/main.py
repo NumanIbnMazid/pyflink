@@ -1,10 +1,11 @@
 import sys
 import os
 import logging
+import json
 
 from pyflink.common import SimpleStringSchema, WatermarkStrategy
 from pyflink.common.typeinfo import Types
-from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.datastream import StreamExecutionEnvironment, OutputTag
 from pyflink.datastream.connectors.base import DeliveryGuarantee
 from pyflink.datastream.connectors.kafka import (
     FlinkKafkaConsumer, FlinkKafkaProducer,
@@ -53,19 +54,35 @@ def main():
         .set_value_only_deserializer(SimpleStringSchema()) \
         .build()
 
-    ds = env.from_source(kafka_consumer, WatermarkStrategy.no_watermarks(), "kafka_test-source-topic")
+    ds = env.from_source(kafka_consumer, WatermarkStrategy.no_watermarks(), "kafka-source")
+
+    kafka_control = KafkaSource.builder() \
+        .set_bootstrap_servers("broker:29092") \
+        .set_topics("test-control-topic") \
+        .set_group_id("test_control") \
+        .set_starting_offsets(KafkaOffsetsInitializer.latest()) \
+        .set_value_only_deserializer(SimpleStringSchema()) \
+        .build()
+
+    ds_control = env.from_source(kafka_control, WatermarkStrategy.no_watermarks(), "kafka-control")
 
     #ds = env.from_collection([
+    # source topic
     #    {"id": 1, "filename": "index_720p30_00001.ts"},
     #    {"id": 2, "filename": "index_720p30_00002.ts"},
+    # control topic
+    #    {"id": 1, "state": "aborted"},
+    #    {"id": 2, "state": "aborted"},
+    #    {"id": 45, "state": "aborted"},
     #])
     
     # perform transformation
     print("Setting up operations")
-    ds = ds.flat_map(FrameGeneratorFunction()).name("frame_generator") \
-           .flat_map(Fifa2020Function(), output_type=Types.STRING()).name("fifa_detector") \
-           .start_new_chain().set_parallelism(2)
-    
+    ds = ds.process(FrameGeneratorFunction()).name("frame_generator") \
+        .connect(ds_control) \
+        .key_by(lambda x: x["id"], lambda x: json.loads(x)["id"]) \
+        .process(Fifa2020Function(), output_type=Types.STRING()).name("fifa_detector")
+
     # produce data to kafka sink topic
     print("Setting up Kafka sink")
     #serialization_schema = JsonRowSerializationSchema.builder().with_type_info(
@@ -89,9 +106,9 @@ def main():
         .set_delivery_guarantee(DeliveryGuarantee.AT_LEAST_ONCE) \
         .build()
 
-    ds.sink_to(kafka_producer).name("kafka_test-sink-topic")
+    #ds.sink_to(kafka_producer).name("kafka-sink")
 
-    #ds.print()
+    ds.print()
 
     # execute
     print("Executing Environment")

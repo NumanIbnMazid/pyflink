@@ -1,6 +1,6 @@
 import math
 import re
-from time import strptime
+from time import strptime, sleep
 from typing import Optional, Tuple, Any, List
 from base64 import b64decode
 import logging
@@ -10,7 +10,12 @@ import cv2
 import numpy as np
 import pytesseract
 from pytesseract import Output
-from pyflink.datastream import FlatMapFunction
+from pyflink.common.typeinfo import Types
+from pyflink.datastream import (
+    FlatMapFunction, RuntimeContext, OutputTag, KeyedCoProcessFunction,
+    CoProcessFunction, CoFlatMapFunction, CoMapFunction, KeyedProcessFunction,
+)
+from pyflink.datastream.state import ValueStateDescriptor
 
 from udfs import image_operations
 from udfs.dto import FIFA2020DTO
@@ -21,24 +26,47 @@ def decode_image(content):
     return cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
 
-class Fifa2020Function(FlatMapFunction):
+class Fifa2020Function(KeyedCoProcessFunction):
     _ADJACENT = "ADJACENT"
     _SEPARATE = "SEPARATE"
 
     def __init__(self):
-        pass
+        self.state = None
 
-    def flat_map(self, value):
-        logging.info("Received encoded frame")
-        content = value[1]
+    def open(self, ctx: RuntimeContext):
+        descriptor = ValueStateDescriptor("state", Types.STRING())
+        self.state = ctx.get_state(descriptor)
 
-        self.image = decode_image(content)
+    def process_element1(self, value, ctx: RuntimeContext):
+        current_state = self.state.value()
+        if current_state is None:
+            self.state.update("processing")
 
-        logging.info("Processing started")
-        result = self.process_message()
-        logging.info("Processing ended")
-        if result:
-            yield json.dumps(result[0].to_dict())
+        if self.state.value() == "aborted":
+            yield "Operation aborted"
+        else:
+            print("State in frame processor: ", self.state.value())
+            logging.info("Received encoded frame")
+            content = value["frame"]
+
+            self.image = decode_image(content)
+
+            logging.info("Processing started")
+            sleep(5)
+            result = self.process_message()
+            logging.info("Processing ended")
+            if result:
+                yield json.dumps(result[0].to_dict())
+
+    def process_element2(self, value, ctx: RuntimeContext):
+        print("State in state changer: ", self.state.value())
+        current_state = self.state.value()
+        value = json.loads(value)
+        self.state.update(value["state"])
+        new_state = self.state.value()
+        result = f"Changed state from {current_state} to {new_state}"
+        yield result
+
 
     def process_message(self):
         return self.run_detection()
