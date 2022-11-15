@@ -1,6 +1,6 @@
 import math
 import re
-from time import strptime, sleep
+from time import strptime
 from typing import Optional, Tuple, Any, List
 from base64 import b64decode
 import logging
@@ -10,15 +10,9 @@ import cv2
 import numpy as np
 import pytesseract
 from pytesseract import Output
-from pyflink.common.typeinfo import Types
-from pyflink.datastream import (
-    FlatMapFunction, RuntimeContext, OutputTag, KeyedCoProcessFunction,
-    CoProcessFunction, CoFlatMapFunction, CoMapFunction, KeyedProcessFunction,
-)
-from pyflink.datastream.state import ValueStateDescriptor
 
-from udfs import image_operations
-from udfs.dto import FIFA2020DTO
+from utils import image_operations
+from utils.dto import FIFA2020DTO
 
 
 def decode_image(content):
@@ -26,53 +20,23 @@ def decode_image(content):
     return cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
 
-class Fifa2020Function(KeyedCoProcessFunction):
+class FifaDetector:
     _ADJACENT = "ADJACENT"
     _SEPARATE = "SEPARATE"
 
     def __init__(self):
-        self.state = None
+        self.image = None
 
-    def open(self, ctx: RuntimeContext):
-        descriptor = ValueStateDescriptor("state", Types.STRING())
-        self.state = ctx.get_state(descriptor)
-
-    def process_element1(self, value, ctx: RuntimeContext):
-        current_state = self.state.value()
-        if current_state is None:
-            self.state.update("processing")
-
-        if self.state.value() == "aborted":
-            yield "Operation aborted"
-        else:
-            print("State in frame processor: ", self.state.value())
-            logging.info("Received encoded frame")
-            content = value["frame"]
-
-            self.image = decode_image(content)
-
-            logging.info("Processing started")
-            sleep(5)
-            result = self.process_message()
-            logging.info("Processing ended")
-            if result:
-                yield json.dumps(result[0].to_dict())
-
-    def process_element2(self, value, ctx: RuntimeContext):
-        print("State in state changer: ", self.state.value())
-        current_state = self.state.value()
-        value = json.loads(value)
-        self.state.update(value["state"])
-        new_state = self.state.value()
-        result = f"Changed state from {current_state} to {new_state}"
-        yield result
-
+    def run(self, value):
+        self.image = decode_image(value["frame"])
+        return self.process_message()
 
     def process_message(self):
         return self.run_detection()
 
     def detect_ocr(self, image, config, text_pattern, detection_name, detection_type="DICT"):
-        logging.debug(f"Start OCR_Detection Execution. Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
+        logging.debug(
+            f"Start OCR_Detection Execution. Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
         # logging.info(f"Start OCR_Detection Execution. Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
 
         if detection_type == "STRING":
@@ -81,7 +45,8 @@ class Fifa2020Function(KeyedCoProcessFunction):
         if detection_type == "DICT":
             d2 = pytesseract.image_to_data(image, config=config, output_type=Output.DICT)
 
-            logging.debug(f"Finished OCR_Detection Execution. Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
+            logging.debug(
+                f"Finished OCR_Detection Execution. Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
             # logging.info(f"Finished OCR_Detection Execution. Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
 
             for text in d2["text"]:
@@ -99,7 +64,8 @@ class Fifa2020Function(KeyedCoProcessFunction):
                     }
                 )
                 return d_res.groups()
-        logging.debug(f"FIFA2020_Detection no results: Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
+        logging.debug(
+            f"FIFA2020_Detection no results: Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
         # logging.info(f"FIFA2020_Detection no results: Detection_Name: {detection_name}. Config: {config}. Pattern: {text_pattern}")
 
     def _prepare_black_element(self, image):
@@ -175,13 +141,13 @@ class Fifa2020Function(KeyedCoProcessFunction):
             return None
 
     def find_image_elements_by_hsv(self,
-                      img,
-                      lower_bound,
-                      upper_bound,
-                      kernel=np.ones((7, 7), np.uint8),
-                      threshold_width=30,
-                      threhold_height=20
-                      ):
+                                   img,
+                                   lower_bound,
+                                   upper_bound,
+                                   kernel=np.ones((7, 7), np.uint8),
+                                   threshold_width=30,
+                                   threhold_height=20
+                                   ):
         # convert to hsv colorspace
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
@@ -256,7 +222,7 @@ class Fifa2020Function(KeyedCoProcessFunction):
             image_height = image_operations.Rectangle.get_image_height(self.image)
 
             # operate on top left corner: 25% height, 50% width
-            rec = image_operations.Rectangle(0, image_width*0.5, 0, image_height*0.25)
+            rec = image_operations.Rectangle(0, image_width * 0.5, 0, image_height * 0.25)
 
             image = image_operations.Image.crop(self.image, rec)
 
@@ -332,5 +298,4 @@ class Fifa2020Function(KeyedCoProcessFunction):
             # logging.info(f"Nothing to send. Next message...")
 
         # logging.info(f"Results: {results}")
-
         return results

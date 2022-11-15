@@ -1,14 +1,6 @@
 import logging
 from base64 import b64encode
 import json
-from time import sleep
-
-from pyflink.common.typeinfo import Types
-from pyflink.datastream import (
-    FlatMapFunction, RuntimeContext, OutputTag,
-    KeyedProcessFunction, KeyedCoProcessFunction
-)
-from pyflink.datastream.state import ValueStateDescriptor
 
 import cv2
 
@@ -18,10 +10,9 @@ def encode_image(image):
     return b64encode(compressed_image.tobytes()).decode("ascii")
 
 
-class FrameGeneratorFunction(KeyedProcessFunction):
-
-    def process_element(self, value, ctx: RuntimeContext):
-        value = json.loads(value)
+class FrameGenerator:
+    def run(self, value):
+        # value = json.loads(value)
         logging.info(f"Getting video from: {value['filename']}")
         print(f"Getting video from: {value['filename']}")
         path = f"videos/videos/{value['filename']}"
@@ -43,8 +34,7 @@ class FrameGeneratorFunction(KeyedProcessFunction):
                     print(f"FileVideoStream: Write frame (Index: {frame_index})")
 
                     result = encode_image(frame)
-                    sleep(5)
-                    yield {"id": value["id"], "frame": result}
+                    yield {"id": value["id"], "frame_index": frame_index, "frame": result}
                     logging.info(f"FileVideoStream: Write frame (Index: {frame_index}) finished")
                     print(f"FileVideoStream: Write frame (Index: {frame_index}) finished")
                 else:
