@@ -102,7 +102,8 @@ def main():
         ds_fifa
         .union(ds_dummy, ds_sleep)  # combine ds_fifa, ds_dummy and ds_sleep into one datastream
         .key_by(lambda x: (x["id"], x["frame_index"]))  # key based on 2 field values
-        .process(DetectorCollectorFunction(merge_ops=3), output_type=Types.STRING()).name("detector_collector")
+        .count_window(3)
+        .process(DetectorCollectorFunction(), output_type=Types.STRING()).name("detector_collector")
         .set_parallelism(1)
     )
     # print out the results on the console
