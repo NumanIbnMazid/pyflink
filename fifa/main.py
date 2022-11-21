@@ -14,7 +14,9 @@ from pyflink.datastream.connectors.kafka import (
 from operators.frame_generator_function import FrameGeneratorFunction
 from operators.fifa_detector_function import FifaDetectorFunction
 from operators.dummy_detector_function import DummyDetectorFunction
-from operators.detector_collector_function import DetectorCollectorFunction
+from operators.detector_collector_function import (
+    DetectorCollectorFunction, DetectorReducerFunction, DetectorAggregatorFunction
+)
 from operators.sleep_detector_function import SleepDetectorFunction
 
 
@@ -102,8 +104,11 @@ def main():
         ds_fifa
         .union(ds_dummy, ds_sleep)  # combine ds_fifa, ds_dummy and ds_sleep into one datastream
         .key_by(lambda x: (x["id"], x["frame_index"]))  # key based on 2 field values
-        .count_window(3)
+        .count_window(3)  # assign a count window that fires once the number of elements equals 3
         .process(DetectorCollectorFunction(), output_type=Types.STRING()).name("detector_collector")
+        # .aggregate(DetectorAggregatorFunction(), output_type=Types.STRING()).name("detector_aggregator")
+        # .reduce(DetectorReducerFunction()).name("detector_reducer")
+        # .map(lambda x: json.dumps(x), output_type=Types.STRING()).name("json_converter")
         .set_parallelism(1)
     )
     # print out the results on the console
