@@ -1,11 +1,11 @@
 from pyflink.datastream import RuntimeContext, ProcessFunction
 
-from detectors.dummy_detector import DummyDetector
+from detectors.game_time_detector import GameTimeDetector
 
 
-class DummyDetectorFunction(ProcessFunction):
+class GameTimeDetectorFunction(ProcessFunction):
     def __init__(self):
-        self.detector = DummyDetector()
+        self.detector = GameTimeDetector()
 
     def process_element(self, value, ctx: RuntimeContext):
         result = self.detector.run(value)

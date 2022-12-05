@@ -12,12 +12,13 @@ from pyflink.datastream.connectors.kafka import (
 )
 
 from operators.frame_generator_function import FrameGeneratorFunction
-from operators.fifa_detector_function import FifaDetectorFunction
-from operators.dummy_detector_function import DummyDetectorFunction
+from operators.game_time_detector_function import GameTimeDetectorFunction
+from operators.paddle_ocr_detector_function import PaddleOcrDetectorFunction
+from operators.video_shot_detector_function import VideoShotDetectorFunction
+from operators.video_wipe_detector_function import VideoWipeDetectorFunction
 from operators.detector_collector_function import (
     DetectorCollectorFunction, DetectorReducerFunction, DetectorAggregatorFunction
 )
-from operators.sleep_detector_function import SleepDetectorFunction
 
 
 def main():
@@ -52,27 +53,13 @@ def main():
     #
     # ds_main = env.from_source(kafka_consumer, WatermarkStrategy.no_watermarks(), "kafka-source")
 
-    # kafka_control = KafkaSource.builder() \
-    #     .set_bootstrap_servers("broker:29092") \
-    #     .set_topics("test-control-topic") \
-    #     .set_group_id("test_control") \
-    #     .set_starting_offsets(KafkaOffsetsInitializer.latest()) \
-    #     .set_value_only_deserializer(SimpleStringSchema()) \
-    #     .build()
-    #
-    # ds_control = env.from_source(kafka_control, WatermarkStrategy.no_watermarks(), "kafka-control")
-
     # source topic
-    #    {"id": 1, "filename": "index_720p30_00001.ts"},
-    #    {"id": 2, "filename": "index_720p30_00002.ts"},
-    # control topic
-    #    {"id": 1, "state": "aborted"},
-    #    {"id": 2, "state": "aborted"},
-    #    {"id": 45, "state": "aborted"},
+    #    {"recording_id": 1, "filename": "index_720p30_00001.ts"},
+    #    {"recording_id": 2, "filename": "index_720p30_00002.ts"},
 
     ds_main = env.from_collection([
-       {"id": 1, "filename": "index_720p30_00001.ts"},
-       {"id": 2, "filename": "index_720p30_00002.ts"},
+       {"recording_id": 1, "filename": "index_720p30_00001.ts"},
+       {"recording_id": 2, "filename": "index_720p30_00002.ts"},
     ])
 
     # perform transformation
@@ -82,29 +69,34 @@ def main():
         ds_main  # input datastream from source
         .process(FrameGeneratorFunction()).name("frame_generator")  # pass to frame extracting operator
     )
-    # pass ds_frames to fifa, dummy and sleep detectors in parallel
-    ds_fifa = (
+    # pass ds_frames to multiple detectors in parallel
+    ds_game_time = (
         ds_frames
-        .key_by(lambda x: x["id"])  # partition by the "id" field
-        .process(FifaDetectorFunction()).name("fifa_detector")
+        .key_by(lambda x: x["recording_id"])  # partition by the "recording_id" field
+        .process(GameTimeDetectorFunction()).name("game_time_detector")
         .set_parallelism(2)
     )
-    ds_dummy = (
+    ds_paddle_ocr = (
         ds_frames
-        .process(DummyDetectorFunction()).name("dummy_detector")
+        .process(PaddleOcrDetectorFunction()).name("paddle_ocr_detector")
         .set_parallelism(2)
     )
-    ds_sleep = (
+    ds_video_shot = (
         ds_frames
-        .process(SleepDetectorFunction()).name("sleep_detector")
+        .process(VideoShotDetectorFunction()).name("video_shot_detector")
+        .set_parallelism(2)
+    )
+    ds_video_wipe = (
+        ds_frames
+        .process(VideoWipeDetectorFunction()).name("video_wipe_detector")
         .set_parallelism(2)
     )
     # combine the results for each individual frame
     ds_final = (
-        ds_fifa
-        .union(ds_dummy, ds_sleep)  # combine ds_fifa, ds_dummy and ds_sleep into one datastream
-        .key_by(lambda x: (x["id"], x["frame_index"]))  # key based on 2 field values
-        .count_window(3)  # assign a count window that fires once the number of elements equals 3
+        ds_game_time
+        .union(ds_paddle_ocr, ds_video_shot, ds_video_wipe)  # combine detector results into one datastream
+        .key_by(lambda x: (x["recording_id"], x["frame_index"]))  # key based on 2 field values
+        .count_window(4)  # assign a count window that fires once the number of elements equals 4
         .process(DetectorCollectorFunction(), output_type=Types.STRING()).name("detector_collector")
         # .aggregate(DetectorAggregatorFunction(), output_type=Types.STRING()).name("detector_aggregator")
         # .reduce(DetectorReducerFunction()).name("detector_reducer")
@@ -127,9 +119,7 @@ def main():
     #     .set_delivery_guarantee(DeliveryGuarantee.AT_LEAST_ONCE) \
     #     .build()
 
-    # ds.sink_to(kafka_producer).name("kafka-sink")
-
-    # ds.print()
+    # ds_final.sink_to(kafka_producer).name("kafka-sink")
 
     # execute
     print("Executing Environment")

@@ -34,7 +34,7 @@ class FrameGenerator:
                     print(f"FileVideoStream: Write frame (Index: {frame_index})")
 
                     result = encode_image(frame)
-                    yield {"id": value["id"], "frame_index": frame_index, "frame": result}
+                    yield {"recording_id": value["recording_id"], "frame_index": frame_index, "frame": result}
                     logging.info(f"FileVideoStream: Write frame (Index: {frame_index}) finished")
                     print(f"FileVideoStream: Write frame (Index: {frame_index}) finished")
                 else:

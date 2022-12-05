@@ -1,11 +1,11 @@
 from pyflink.datastream import RuntimeContext, ProcessFunction
 
-from detectors.sleep_detector import SleepDetector
+from detectors.paddle_ocr_detector import PaddleOcrDetector
 
 
-class SleepDetectorFunction(ProcessFunction):
+class PaddleOcrDetectorFunction(ProcessFunction):
     def __init__(self):
-        self.detector = SleepDetector()
+        self.detector = PaddleOcrDetector()
 
     def process_element(self, value, ctx: RuntimeContext):
         result = self.detector.run(value)

@@ -11,5 +11,5 @@ class FifaDetectorFunction(KeyedProcessFunction):
         result = self.detector.run(value)
         if result:
             res_dict = result[0].to_dict()
-            res_dict.update(id=value["id"], frame_index=value["frame_index"])
+            res_dict.update(recording_id=value["recording_id"], frame_index=value["frame_index"])
             yield res_dict
