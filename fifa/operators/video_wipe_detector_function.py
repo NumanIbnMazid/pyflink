@@ -1,13 +1,16 @@
-from pyflink.datastream import RuntimeContext, ProcessFunction
+from pyflink.datastream import RuntimeContext, KeyedProcessFunction
 
 from detectors.video_wipe_detector import VideoWipeDetector
 
 
-class VideoWipeDetectorFunction(ProcessFunction):
+class VideoWipeDetectorFunction(KeyedProcessFunction):
     def __init__(self):
         self.detector = VideoWipeDetector()
 
     def process_element(self, value, ctx: RuntimeContext):
-        result = self.detector.run(value)
-        if result:
-            yield result
+        if not self.detector.name in value["detectors"]:
+            yield {"recording_id": value["recording_id"], "frame_index": value["frame_index"]}
+        else:
+            result = self.detector.run(value)
+            if result:
+                yield result

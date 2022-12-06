@@ -58,8 +58,8 @@ def main():
     #    {"recording_id": 2, "filename": "index_720p30_00002.ts"},
 
     ds_main = env.from_collection([
-       {"recording_id": 1, "filename": "index_720p30_00001.ts"},
-       {"recording_id": 2, "filename": "index_720p30_00002.ts"},
+       {"recording_id": 1, "filename": "index_720p30_00001.ts", "detectors": ["game_time", "paddle_ocr"]},
+       {"recording_id": 2, "filename": "index_720p30_00002.ts", "detectors": ["video_shot", "video_wipe"]},
     ])
 
     # perform transformation
@@ -68,11 +68,11 @@ def main():
     ds_frames = (
         ds_main  # input datastream from source
         .process(FrameGeneratorFunction()).name("frame_generator")  # pass to frame extracting operator
+        .key_by(lambda x: x["recording_id"])  # partition by the "recording_id" field
     )
     # pass ds_frames to multiple detectors in parallel
     ds_game_time = (
         ds_frames
-        .key_by(lambda x: x["recording_id"])  # partition by the "recording_id" field
         .process(GameTimeDetectorFunction()).name("game_time_detector")
         .set_parallelism(2)
     )
