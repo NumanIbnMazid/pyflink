@@ -34,7 +34,7 @@ services:
     image: pyflink-ocr:1.16.0
     build:
       context: ./build
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile-ocr
     ports:
       - "8081:8081"
     command: jobmanager
@@ -50,7 +50,7 @@ services:
     image: pyflink-ocr:1.16.0
     build:
       context: ./build
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile-ocr
     depends_on:
       - jobmanager
     command: taskmanager
