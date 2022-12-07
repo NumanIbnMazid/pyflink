@@ -88,6 +88,7 @@ def main():
     )
     ds_video_wipe = (
         ds_frames
+        .count_window(2)
         .process(VideoWipeDetectorFunction()).name("video_wipe_detector")
         .set_parallelism(2)
     )
