@@ -12,5 +12,6 @@ class VideoWipeDetectorFunction(ProcessWindowFunction):
             for value in values:
                 yield {"recording_id": value["recording_id"], "frame_index": value["frame_index"]}
         else:
-            for value in values:
-                yield self.detector.run(value)
+            results = self.detector.run(values)
+            for result in results:
+                yield result

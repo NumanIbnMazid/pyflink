@@ -83,6 +83,7 @@ def main():
     )
     ds_video_shot = (
         ds_frames
+        .count_window(3, 1)
         .process(VideoShotDetectorFunction()).name("video_shot_detector")
         .set_parallelism(2)
     )
