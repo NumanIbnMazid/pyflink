@@ -2,6 +2,10 @@
 
 ## Example workflow to run word_count demo
 
+### Run Docker
+
+$ `docker compose up`
+
 ### Access Pyflink Job Manager Container's Bash
 
 $ `docker exec -it -u flink pyflink-jobmanager-1 bash`
