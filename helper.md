@@ -21,5 +21,3 @@ $ `python word_count.py`
 ### Execute target python file specifying input
 
 $ `python word_count.py --input word_text.txt`
-
-Example Change...
