@@ -25,3 +25,11 @@ $ `python word_count.py`
 ### Execute target python file specifying input
 
 $ `python word_count.py --input word_text.txt`
+
+### Execute target python file using docker compose
+
+$ `docker-compose run --rm --entrypoint '/bin/sh' jobmanager -c 'cd /project && cd word_count/ && python word_count.py'`
+
+### Execute target python file specifying input using docker compose
+
+$ `docker-compose run --rm --entrypoint '/bin/sh' jobmanager -c 'cd /project && cd word_count/ && python word_count.py --input word_text.txt'`
