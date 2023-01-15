@@ -1,0 +1,7 @@
+{"data":[{"word":"To","count":1}],"type":"INSERT"}
+{"data":[{"word":"be","count":1}],"type":"INSERT"}
+{"data":[{"word":"or","count":1}],"type":"INSERT"}
+{"data":[{"word":"not","count":1}],"type":"INSERT"}
+{"data":[{"word":"to","count":1}],"type":"INSERT"}
+{"data":[{"word":"be","count":1}],"type":"DELETE"}
+{"data":[{"word":"be","count":2}],"type":"INSERT"}
